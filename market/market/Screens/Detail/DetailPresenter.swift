@@ -73,8 +73,12 @@ final class DetailPresenter: DetailViewOutput {
     
     func loadProduct(with productId: Int) {
         Task {
-            let product = try await productService.fetchProduct(with: productId)
-            await updateView(product: product)
+            do {
+                let product = try await productService.fetchProduct(with: productId)
+                await updateView(product: product)
+            } catch {
+                await viewShouldShowError()
+            }
         }
     }
     
@@ -84,6 +88,11 @@ final class DetailPresenter: DetailViewOutput {
     
     func viewDidTappedOnImage(imageURLs: [String]) {
         didTapToOpenImages?(imageURLs, self)
+    }
+    
+    @MainActor
+    private func viewShouldShowError() {
+        view?.showError()
     }
     
     @MainActor

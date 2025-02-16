@@ -8,6 +8,14 @@
 import Foundation
 import UIKit
 
+protocol FilterViewInput: AnyObject {
+    func didReceiveCategories(_ categories: [Category])
+}
+
+protocol FilterViewControllerDelegate: AnyObject {
+    func didDismissWithData(_ filter: Filter)
+}
+
 class FilterViewController: UIViewController {
     
     enum Constants {
@@ -17,7 +25,24 @@ class FilterViewController: UIViewController {
         static let spacingBetweenSections = 24.0
     }
     
-    var categories: [String] = ["Music", "Clothes", "Electronics", "Sports", "Books", "Home", "Toys", "Cars"]
+    weak var delegate: FilterViewControllerDelegate?
+    
+    private var categories: [Category] = []
+    private let filter: Filter?
+    var output: FilterViewOutput
+    
+    init(output: FilterViewOutput, filter: Filter?) {
+        self.output = output
+        self.filter = filter
+    
+        super.init(nibName: nil, bundle: nil)
+        
+        setData()
+    }
+    
+    required init?(coder: NSCoder) {
+        fatalError("init(coder:) has not been implemented")
+    }
     
     private lazy var categoryTitleLabel: UILabel = {
         let label = UILabel()
@@ -78,9 +103,37 @@ class FilterViewController: UIViewController {
         return scrollView
     }()
     
+    private lazy var applyButton: UIButton = {
+        var config = UIButton.Configuration.filled()
+        config.buttonSize = .medium
+        config.cornerStyle = .medium
+        let button = UIButton()
+        button.configuration = config
+        button.setTitle(StringConstants.Filter.apply, for: .normal)
+        button.addTarget(self, action: #selector(applyButtonTapped), for: .touchUpInside)
+        return button
+    }()
+    
+    @objc private func applyButtonTapped() {
+        let title = self.filter?.title == "" ? "" : self.filter?.title ?? ""
+        let price = priceTextField.text == "" ? filter?.price : Int(priceTextField.text ?? "0")
+        let priceMin = priceFromTextField.text == "" ? filter?.priceMin : Int(priceFromTextField.text ?? "0")
+        let priceMax = priceToTextField.text == "" ? filter?.priceMax : Int(priceToTextField.text ?? "0")
+        
+        let filter = Filter(uuid: UUID(), title: title,
+                            category: categoryView.selectedCategory,
+                            price: price,
+                            priceMin: priceMin,
+                            priceMax: priceMax)
+        
+        delegate?.didDismissWithData(filter)
+        dismiss(animated: true)
+    }
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
+        output.getCategories()
         setupView()
     }
     
@@ -90,11 +143,18 @@ class FilterViewController: UIViewController {
         setupContraints()
     }
     
+    override func viewDidLayoutSubviews() {
+        super.viewDidLayoutSubviews()
+
+        preferredContentSize = containerView.contentSize
+    }
+    
     private func setupView() {
+        view.backgroundColor = .systemBackground
         view.addSubview(containerView)
         
         [categoryTitleLabel, categoryView, priceTitleLabel, priceTextField,
-         priceRangeTitleLabel, priceFromTextField, priceToTextField].forEach({containerView.addSubview($0)})
+         priceRangeTitleLabel, priceFromTextField, priceToTextField, applyButton].forEach({containerView.addSubview($0)})
         
         NSLayoutConstraint.activate([
             containerView.topAnchor.constraint(equalTo: view.topAnchor),
@@ -105,6 +165,23 @@ class FilterViewController: UIViewController {
         
     }
     
+    private func setData() {
+        if let filter = filter {
+            
+            if let price = filter.price {
+                priceTextField.text = String(price)
+            }
+            
+            if let priceMin = filter.priceMin {
+                priceFromTextField.text = String(priceMin)
+            }
+            
+            if let priceMax = filter.priceMax {
+                priceToTextField.text = String(priceMax)
+            }
+        }
+    }
+    
     private func setupContraints() {
         let availableWidth: CGFloat = view.bounds.width - Constants.horizontalOffset * 2
         
@@ -112,7 +189,7 @@ class FilterViewController: UIViewController {
                                                                height: .greatestFiniteMagnitude)).height
         
         categoryTitleLabel.frame = CGRect(x: Constants.horizontalOffset,
-                                          y: Constants.verticalOffset,
+                                          y: 2 * Constants.verticalOffset,
                                           width: availableWidth,
                                           height: 25)
         
@@ -146,8 +223,24 @@ class FilterViewController: UIViewController {
                                         width: availableWidth / 2 - Constants.spacing,
                                         height: 50)
         
+        applyButton.frame = CGRect(x: (view.bounds.width - availableWidth / 2) / 2,
+                                   y: priceToTextField.frame.maxY + 2 * Constants.horizontalOffset,
+                                   width: availableWidth / 2,
+                                   height: 50)
+        
         containerView.contentSize = CGSize(width: view.bounds.width,
-                                           height: priceToTextField.frame.maxY + Constants.verticalOffset
+                                           height: applyButton.frame.maxY + Constants.verticalOffset
         )
+    }
+}
+
+extension FilterViewController: FilterViewInput {
+    func didReceiveCategories(_ categories: [Category]) {
+        self.categories = categories
+        categoryView.reloadData(with: categories)
+        if let category = filter?.category {
+            categoryView.setSelectedCategory(category)
+        }
+        view.setNeedsLayout()
     }
 }

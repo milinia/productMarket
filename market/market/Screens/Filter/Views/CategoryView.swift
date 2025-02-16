@@ -10,15 +10,15 @@ import UIKit
 
 final class CategoryView: UIView {
     
-    private let categories: [String]
+    private var categories: [Category]
     private var labels: [UILabel] = []
     private var selectedCategoryIndex: Int = -1
     
-    var selectedCategory: String {
+    var selectedCategory: Category {
         return categories[selectedCategoryIndex]
     }
     
-    init(categories: [String]) {
+    init(categories: [Category]) {
         self.categories = categories
         
         super.init(frame: .zero)
@@ -43,17 +43,20 @@ final class CategoryView: UIView {
     }
     
     private func setupView() {
+        var index = 0
         categories.forEach { category in
             let label = UILabel()
             label.textColor = .label
             label.font = .systemFont(ofSize: 18, weight: .medium)
             label.textAlignment = .center
-            label.text = category
+            label.text = category.name
             label.layer.borderColor = UIColor.systemGray4.cgColor
             label.layer.borderWidth = 1
             label.layer.cornerRadius = 8
             label.clipsToBounds = true
             label.isUserInteractionEnabled = true
+            label.tag = index
+            index += 1
                         
             let tapGesture = UITapGestureRecognizer(target: self, action: #selector(handleTap(_:)))
             label.addGestureRecognizer(tapGesture)
@@ -66,19 +69,33 @@ final class CategoryView: UIView {
     
     @objc private func handleTap(_ sender: UITapGestureRecognizer) {
         if let label = sender.view as? UILabel {
-            if let text = label.text {
-                if let index = categories.firstIndex(of: text) {
-                    if selectedCategoryIndex != -1 {
-                        labels[selectedCategoryIndex].backgroundColor = .clear
-                    }
-                    if selectedCategoryIndex == index {
-                        selectedCategoryIndex = -1
-                        return
-                    }
-                    selectedCategoryIndex = index
-                    labels[selectedCategoryIndex].backgroundColor = .link
-                }
+            let index = label.tag
+            if selectedCategoryIndex != -1 {
+                labels[selectedCategoryIndex].backgroundColor = .clear
             }
+            if selectedCategoryIndex == index {
+                selectedCategoryIndex = -1
+                return
+            }
+            selectedCategoryIndex = index
+            labels[selectedCategoryIndex].backgroundColor = .link
+        }
+    }
+    
+    func reloadData(with categories: [Category]) {
+        self.categories = categories
+        
+        labels.forEach { $0.removeFromSuperview() }
+        labels.removeAll()
+        
+        setupView()
+        setNeedsLayout()
+    }
+    
+    func setSelectedCategory(_ category: Category?) {
+        if let category = category, let index = categories.firstIndex(where: { $0.id == category.id }) {
+            selectedCategoryIndex = index
+            labels[index].backgroundColor = .link
         }
     }
     

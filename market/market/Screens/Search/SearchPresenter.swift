@@ -13,6 +13,7 @@ protocol SearchViewOutput: AnyObject, LoadImageDelegate {
     func viewDidLoad()
     func saveSearchRequest(filter: Filter)
     func viewDidTappedGoToCart()
+    func viewDidTappedGoToFilter(with filter: Filter?)
     func viewDidTapOnProductCell(product: Product)
     func fetchSearchHistory()
     func viewDidScrolledToBottom()
@@ -30,6 +31,7 @@ class SearchPresenter: SearchViewOutput {
     weak var view: SearchViewInput?
     var didTapToOpenDetail: ((Product, Int, Int) -> Void)?
     var didTapToOpenCart: (() -> Void)?
+    var didTapToOpenFilter: ((Filter?) -> UIViewController)?
     
     init(imageService: ImageServiceProtocol,
          productService: ProductServiceProtocol,
@@ -110,6 +112,12 @@ class SearchPresenter: SearchViewOutput {
     
     func viewDidTappedGoToCart() {
         didTapToOpenCart?()
+    }
+    
+    func viewDidTappedGoToFilter(with filter: Filter?) {
+        if let filterView = didTapToOpenFilter?(filter) {
+            view?.showViewController(filterView)
+        }
     }
     
     @MainActor

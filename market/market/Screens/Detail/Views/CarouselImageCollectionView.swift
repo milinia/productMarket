@@ -13,6 +13,11 @@ protocol CarouselImageCollectionViewDelegate: AnyObject {
     func didScrollImage(imageIndexShown: Int)
 }
 
+extension CarouselImageCollectionViewDelegate {
+    func didScrollImage(imageIndexShown: Int) {}
+    func didSelectImage(url: String, image: UIImage?) {}
+}
+
 final class CarouselImageCollectionView: UICollectionView {
     
     private enum Section {

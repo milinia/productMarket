@@ -11,6 +11,7 @@ import UIKit
 protocol DetailViewInput: AnyObject {
     func updateProduct(product: Product)
     func updateProductQuantity(quantity: Int)
+    func showError()
 }
 
 class DetailViewController: UIViewController {
@@ -137,11 +138,23 @@ class DetailViewController: UIViewController {
         return stackView
     }()
     
+    private lazy var errorView: ErrorView = {
+        let errorView = ErrorView()
+        errorView.translatesAutoresizingMaskIntoConstraints = false
+        errorView.isHidden = true
+        errorView.delegate = self
+        return errorView
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
         setupView()
         
+        getData()
+    }
+    
+    private func getData() {
         if product != nil {
             setupData(product: product!)
         } else {
@@ -174,18 +187,24 @@ class DetailViewController: UIViewController {
     }
     
     private func setupView() {
+        view.backgroundColor = .systemBackground
         setupNavigationBar()
         
-        view.addSubview(containerView)
+        [errorView, containerView].forEach({ view.addSubview($0) })
         
         [collectionView, priceLabel, titleLabel, stackViewForButtons, categoryLabel,
          descriptionTitleLabel, descriptionLabel].forEach({ containerView.addSubview($0) })
         
         NSLayoutConstraint.activate([
-            containerView.topAnchor.constraint(equalTo: view.topAnchor),
+            containerView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
             containerView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
             containerView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
-            containerView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
+            containerView.bottomAnchor.constraint(equalTo: view.bottomAnchor),
+            
+            errorView.topAnchor.constraint(equalTo: view.safeAreaLayoutGuide.topAnchor),
+            errorView.leadingAnchor.constraint(equalTo: view.leadingAnchor),
+            errorView.trailingAnchor.constraint(equalTo: view.trailingAnchor),
+            errorView.bottomAnchor.constraint(equalTo: view.bottomAnchor)
         ])
         
         containerView.contentSize = calculateContentSize()
@@ -233,7 +252,7 @@ class DetailViewController: UIViewController {
     }
     
     private func calculateContentSize() -> CGSize {
-        let width: CGFloat = view.bounds.width
+        let width: CGFloat = UIScreen.main.bounds.width
         let widthWithInsets: CGFloat = width - 2 * Constants.horizontalOffset
         
         collectionView.frame = CGRect(x: 0,
@@ -305,7 +324,6 @@ class DetailViewController: UIViewController {
 }
 
 extension DetailViewController: CarouselImageCollectionViewDelegate {
-    func didScrollImage(imageIndexShown: Int) {}
     
     func didSelectImage(url: String, image: UIImage?) {
         output.viewDidTappedOnImage(imageURLs: product?.images ?? [])
@@ -328,6 +346,8 @@ extension DetailViewController: ProductQuantityViewDelegate {
 
 extension DetailViewController: DetailViewInput {
     func updateProduct(product: Product) {
+        containerView.isHidden = false
+        errorView.isHidden = true
         self.product = product
         setupData(product: product)
     }
@@ -341,5 +361,16 @@ extension DetailViewController: DetailViewInput {
            self.isProductInCart = false
            self.quantity = 0
        }
+    }
+    
+    func showError() {
+        containerView.isHidden = true
+        errorView.isHidden = false
+    }
+}
+
+extension DetailViewController: ErrorViewDelegate {
+    func errorViewDidTapTryAgain() {
+        getData()
     }
 }

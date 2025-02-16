@@ -29,6 +29,7 @@ final class Coordinator {
         presenter.view = view
         presenter.didTapToOpenDetail = openDetail
         presenter.didTapToOpenCart = openCart
+        presenter.didTapToOpenFilter = openFilter
         navigationController.viewControllers = [view]
     }
     
@@ -60,7 +61,11 @@ final class Coordinator {
         navigationController.pushViewController(view, animated: true)
     }
     
-    func openFilter() {
+    func openFilter(filter: Filter?) -> UIViewController {
+        let presenter = FilterPresenter(categoryService: assembly.categoryService)
+        let view = FilterViewController(output: presenter, filter: filter)
+        presenter.view = view
         
+        return view
     }
 }

@@ -61,6 +61,7 @@ final class CartProductCell: UICollectionViewCell {
     
     private var productQuantityView: ProductQuantityView = {
         let view = ProductQuantityView(quantity: 1)
+        view.translatesAutoresizingMaskIntoConstraints = false
         view.isZeroReachable = false
         return view
     }()
@@ -107,19 +108,21 @@ final class CartProductCell: UICollectionViewCell {
     }
     
     private func setupConstraints() {
-        let vStackView = UIStackView(arrangedSubviews: [productPriceLabel, productNameLabel, productQuantityView])
+        let vStackView = UIStackView(arrangedSubviews: [productPriceLabel, productNameLabel])
         vStackView.axis = .vertical
         vStackView.spacing = Constants.spacing
         vStackView.distribution = .fill
         vStackView.translatesAutoresizingMaskIntoConstraints = false
         
-        [productImageView, vStackView, deleteButton].forEach({ addSubview($0)})
+        [productImageView, vStackView, productQuantityView, deleteButton].forEach({ addSubview($0)})
         
         productQuantityView.setContentHuggingPriority(.required, for: .vertical)
         productQuantityView.setContentCompressionResistancePriority(.required, for: .vertical)
         
         productNameLabel.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
         productPriceLabel.setContentCompressionResistancePriority(.defaultLow, for: .vertical)
+        
+        let stackViewWidth = UIScreen.main.bounds.width - (Constants.horizontalOffset * 2) - Constants.imageSize - Constants.deleteButtonSize
         
         NSLayoutConstraint.activate([
             productImageView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.verticalOffset),
@@ -131,14 +134,16 @@ final class CartProductCell: UICollectionViewCell {
             deleteButton.heightAnchor.constraint(equalToConstant: Constants.deleteButtonSize),
             deleteButton.topAnchor.constraint(equalTo: productImageView.centerYAnchor, constant: -Constants.deleteButtonSize / 2),
             deleteButton.trailingAnchor.constraint(equalTo: trailingAnchor, constant: -Constants.horizontalOffset),
+            
+            productQuantityView.widthAnchor.constraint(equalToConstant: stackViewWidth * 0.5),
+            productQuantityView.heightAnchor.constraint(equalToConstant: Constants.productQuantityHeight),
+            productQuantityView.bottomAnchor.constraint(equalTo: bottomAnchor),
+            productQuantityView.leadingAnchor.constraint(equalTo: productImageView.trailingAnchor, constant: Constants.spacing),
                 
             vStackView.leadingAnchor.constraint(equalTo: productImageView.trailingAnchor, constant: Constants.spacing),
             vStackView.trailingAnchor.constraint(equalTo: deleteButton.leadingAnchor, constant: -Constants.spacing),
             vStackView.topAnchor.constraint(equalTo: topAnchor, constant: Constants.verticalOffset),
-            vStackView.bottomAnchor.constraint(equalTo: bottomAnchor, constant: -Constants.verticalOffset),
-//                
-//            productQuantityView.widthAnchor.constraint(equalTo: vStackView.widthAnchor, multiplier: 0.5),
-//            productQuantityView.heightAnchor.constraint(equalToConstant: Constants.productQuantityHeight)
+            vStackView.bottomAnchor.constraint(equalTo: productQuantityView.topAnchor, constant: -Constants.spacing)
         ])
         
     }

@@ -60,8 +60,6 @@ final class ProductImageViewController: UIViewController {
 }
 
 extension ProductImageViewController: CarouselImageCollectionViewDelegate {
-    func didSelectImage(url: String, image: UIImage?) {}
-    
     func didScrollImage(imageIndexShown: Int) {
         updateNavigationBarTitle(with: imageIndexShown)
     }

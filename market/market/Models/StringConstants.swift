@@ -12,6 +12,8 @@ enum StringConstants {
         static let nothingFound = "Nothing found"
         static let search = "Search"
         static let title = "Products"
+        static let error = "Something went wrong!"
+        static let tryAgain = "Try again"
     }
     
     enum Detail {

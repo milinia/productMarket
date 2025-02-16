@@ -15,11 +15,13 @@ protocol AssemblyProtocol {
     var cartPersistenceManager: CartPersistenceManagerProtocol { get }
     var searchRequestsPersistenceManager: SearchRequestsPersistenceManagerProtocol { get }
     var cartManager: CartManagerProtocol { get }
+    var categoryService: CategoryServiceProtocol { get }
 }
 
 final class Assembly: AssemblyProtocol {
     lazy var networkManager: NetworkManagerProtocol = NetworkManager()
     lazy var productService: ProductServiceProtocol = ProductService(networkManager: networkManager)
+    lazy var categoryService: CategoryServiceProtocol = CategoryService(networkManager: networkManager)
     lazy var imageCacheService: ImageCacheServiceProtocol = ImageCacheService()
     lazy var imageService: ImageServiceProtocol = ImageService(imageCacheService: imageCacheService,
                                                                networkManager: networkManager)

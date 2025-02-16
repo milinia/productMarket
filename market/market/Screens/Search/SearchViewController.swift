@@ -13,6 +13,7 @@ protocol SearchViewInput: AnyObject {
     func showError()
     func showProducts(products: [Product])
     func showSearchHistory(requests: [Filter])
+    func showViewController(_ viewController: UIViewController)
 }
 
 class SearchViewController: UIViewController {
@@ -57,8 +58,7 @@ class SearchViewController: UIViewController {
     }()
 
     @objc func filterButtonTapped() {
-        let vc = FilterViewController()
-        present(vc, animated: true)
+        output.viewDidTappedGoToFilter(with: filter)
     }
     
     private lazy var collectionViewLayout: UICollectionViewFlowLayout = {
@@ -76,6 +76,14 @@ class SearchViewController: UIViewController {
         return collectionView
     }()
     
+    private lazy var errorView: ErrorView = {
+        let errorView = ErrorView()
+        errorView.translatesAutoresizingMaskIntoConstraints = false
+        errorView.isHidden = true
+        errorView.delegate = self
+        return errorView
+    }()
+    
     override func viewDidLoad() {
         super.viewDidLoad()
         
@@ -84,9 +92,10 @@ class SearchViewController: UIViewController {
     }
     
     private func setupViews() {
+        view.backgroundColor = .systemBackground
         setupNavigationBar()
         
-        [searchBar, filterButton, collectionView].forEach({ view.addSubview($0) })
+        [searchBar, filterButton, collectionView, errorView].forEach({ view.addSubview($0) })
         
         NSLayoutConstraint.activate([
             filterButton.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalOffsets),
@@ -101,7 +110,12 @@ class SearchViewController: UIViewController {
             collectionView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalOffsets),
             collectionView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalOffsets),
             collectionView.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: Constants.verticalOffsets),
-            collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -Constants.verticalOffsets)
+            collectionView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -Constants.verticalOffsets),
+            
+            errorView.leadingAnchor.constraint(equalTo: view.leadingAnchor, constant: Constants.horizontalOffsets),
+            errorView.trailingAnchor.constraint(equalTo: view.trailingAnchor, constant: -Constants.horizontalOffsets),
+            errorView.topAnchor.constraint(equalTo: searchBar.bottomAnchor, constant: Constants.verticalOffsets),
+            errorView.bottomAnchor.constraint(equalTo: view.safeAreaLayoutGuide.bottomAnchor, constant: -Constants.verticalOffsets),
         ])
     }
     
@@ -145,13 +159,22 @@ extension SearchViewController: UISearchBarDelegate {
 extension SearchViewController: SearchViewInput {
     
     func showLoading() {
+        showCollectionView()
         collectionView.showLoadingCell()
+    }
+    
+    private func showCollectionView() {
+        errorView.isHidden = true
+        collectionView.isHidden = false
     }
         
     func showError() {
+        errorView.isHidden = false
+        collectionView.isHidden = true
     }
         
     func showProducts(products: [Product]) {
+        showCollectionView()
         if products.isEmpty && collectionView.status != .product {
             collectionView.showNothingFoundCell()
         } else {
@@ -160,9 +183,23 @@ extension SearchViewController: SearchViewInput {
     }
     
     func showSearchHistory(requests: [Filter]) {
+        showCollectionView()
         collectionView.showRequestsHistory(requestsHistory: requests)
     }
     
+    func showViewController(_ viewController: UIViewController) {
+        if let viewController = viewController as? FilterViewController {
+            
+            viewController.delegate = self
+            
+            if let sheet = viewController.sheetPresentationController {
+                sheet.detents = [.custom(resolver: { context in
+                    return viewController.preferredContentSize.height
+                })]
+            }
+            present(viewController, animated: true)
+        }
+    }
 }
 
 extension SearchViewController: SearchResultCollectionViewDelegate {
@@ -189,4 +226,21 @@ extension SearchViewController: SearchResultCollectionViewDelegate {
         }
     }
 }
+
+extension SearchViewController: FilterViewControllerDelegate {
+    func didDismissWithData(_ filter: Filter) {
+        self.filter = filter
         
+        output.viewDidSearch(filter: filter)
+    }
+}
+
+extension SearchViewController: ErrorViewDelegate {
+    func errorViewDidTapTryAgain() {
+        if let filter = filter {
+            output.viewDidSearch(filter: filter)
+        } else {
+            output.viewDidLoad()
+        }
+    }
+}

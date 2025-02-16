@@ -59,6 +59,7 @@ class CartViewController: UIViewController {
     }
     
     private func setupView() {
+        view.backgroundColor = .systemBackground
         setupNavigationBar()
         
         [collectionView].forEach({ view.addSubview($0) })
